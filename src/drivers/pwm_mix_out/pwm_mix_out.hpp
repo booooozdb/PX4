@@ -64,6 +64,8 @@
 #include <px4_platform_common/module_params.h>
 #include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
 //#include <px4_platform_common/px4_work_queue/WorkItem.hpp>
+#include <lib/mathlib/mathlib.h>
+#include <matrix/math.hpp>
 
 
 typedef enum
@@ -76,7 +78,8 @@ typedef enum
     VTOL_X2				= 5,		// 18 ducts, 14kg
     XWing				= 6,		// 18 ducts, 14kg
     x1mini				= 7,		// 3kg, 8 propellers, vtol
-    TEST				= 8		// test
+    hiland270			= 8,		// 270kg, 8 propellers, standard fw
+    TEST				= 9		// test
 } vehicle_id_e;
 
 
@@ -119,7 +122,6 @@ public:
 
     void mix_and_update_outputs();
 
-
 private:
     px4::atomic_bool _task_should_exit{false};
 
@@ -150,6 +152,9 @@ private:
                 {this, ORB_ID(actuator_controls_4), 4},
                 {this, ORB_ID(actuator_controls_5), 5}
     };
+
+    uORB::Subscription _actuator_dsc_sub{ORB_ID(actuator_controls_dsc)};
+
 
     uORB::PublicationMulti<actuator_outputs_s> _actuator_outputs_pub{ORB_ID(actuator_outputs)};
 
@@ -189,6 +194,8 @@ private:
     actuator_outputs_s _actuator_outputs{};
     actuator_controls_s _actuator_controls_0{};
     actuator_controls_s _actuator_controls_1{};
+
+    actuator_controls_s _actuator_controls_dsc{};
 
 
 

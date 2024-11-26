@@ -1596,7 +1596,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 
 		configure_stream_local("ACTUATOR_CONTROL_TARGET0", 10.0f);
 		configure_stream_local("ADSB_VEHICLE", unlimited_rate);
-		configure_stream_local("ATTITUDE_QUATERNION", 50.0f);
+        configure_stream_local("ATTITUDE_QUATERNION", 50.0f);
 		configure_stream_local("ATTITUDE_TARGET", 10.0f);
 		configure_stream_local("BATTERY_STATUS", 0.5f);
 		configure_stream_local("CAMERA_IMAGE_CAPTURED", unlimited_rate);
@@ -1718,10 +1718,18 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		break;
 
 	case MAVLINK_MODE_MAGIC:
+        configure_stream_local("ATTITUDE", 2.0f);
+        configure_stream_local("SERVO_OUTPUT_RAW_0", 2.0f);
+        PX4_INFO("case MAVLINK_MODE_MAGIC:");
+
+//        configure_stream_local("ATTITUDE", 100.0f);
+//        configure_stream_local("SERVO_OUTPUT_RAW_0", 100.0f);
 
 	/* fallthrough */
 	case MAVLINK_MODE_CUSTOM:
         configure_stream_local("SERVO_OUTPUT_RAW_0", 100.0f);
+        configure_stream_local("WIND_COV", 10.0f);
+
 //        configure_stream_local("ACTUATOR_OUTPUT_STATUS", 100.0f);
         break;
 
@@ -1738,7 +1746,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("ADSB_VEHICLE", unlimited_rate);
 		configure_stream_local("ALTITUDE", 10.0f);
 		configure_stream_local("ATTITUDE", 50.0f);
-		configure_stream_local("ATTITUDE_QUATERNION", 50.0f);
+        configure_stream_local("ATTITUDE_QUATERNION", 50.0f);
 		configure_stream_local("ATTITUDE_TARGET", 8.0f);
 		configure_stream_local("BATTERY_STATUS", 0.5f);
 		configure_stream_local("CAMERA_IMAGE_CAPTURED", unlimited_rate);

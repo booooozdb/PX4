@@ -735,3 +735,129 @@ PARAM_DEFINE_FLOAT(FW_DTRIM_R_FLPS, 0.0f);
  * @increment 0.01
  */
 PARAM_DEFINE_FLOAT(FW_DTRIM_P_FLPS, 0.0f);
+
+
+
+/**
+ * proportional from pitch_error to pitch_rate_sp of INDI controller
+ *
+ * @unit 1/s
+ * @min -5000.0
+ * @max 5000.0
+ * @decimal 1
+ * @increment 0.1
+ * @group FW Attitude Control
+ */
+PARAM_DEFINE_FLOAT(FW_INDI_PIT_KP, 5.0f);
+
+/**
+ * frequency of ESO
+ *
+ * The stall airspeed (calibrated airspeed) of the vehicle.
+ * It is used for airspeed sensor failure detection and for the control
+ * surface scaling airspeed limits.
+ *
+ * @unit rad/s
+ * @min 0.5
+ * @max 900
+ * @decimal 1
+ * @increment 0.1
+ * @group FW Attitude Control
+ */
+PARAM_DEFINE_FLOAT(FW_INDI_PIT_OMG, 8.0f);
+
+/**
+ * Control Efficiency of elevator (Control matrix of state-space)
+ *
+ * The stall airspeed (calibrated airspeed) of the vehicle.
+ * It is used for airspeed sensor failure detection and for the control
+ * surface scaling airspeed limits.
+ *
+ * @min -5000.0
+ * @max 5000.0
+ * @decimal 1
+ * @increment 0.1
+ * @group FW Attitude Control
+ */
+PARAM_DEFINE_FLOAT(FW_INDI_PIT_B, -50.0f);
+
+/**
+ * Switch of fw att control method for pitch
+ *
+ * @value 0 PID
+ * @value 1 INDI
+ *
+ * @group FW Attitude Control
+ */
+PARAM_DEFINE_INT32(FW_INDI_PIT_SW, 0);
+
+
+
+
+/**
+ * proportional from roll_error to roll_rate_sp of INDI controller
+ *
+ * The stall airspeed (calibrated airspeed) of the vehicle.
+ * It is used for airspeed sensor failure detection and for the control
+ * surface scaling airspeed limits.
+ *
+ * @unit 1/s
+ * @min -5000.0
+ * @max 5000.0
+ * @decimal 1
+ * @increment 0.1
+ * @group FW Attitude Control
+ */
+PARAM_DEFINE_FLOAT(FW_INDI_RLL_KP, 5.0f);
+
+/**
+ * frequency of ESO
+ *
+ * The stall airspeed (calibrated airspeed) of the vehicle.
+ * It is used for airspeed sensor failure detection and for the control
+ * surface scaling airspeed limits.
+ *
+ * @unit rad/s
+ * @min 0.5
+ * @max 900
+ * @decimal 1
+ * @increment 0.1
+ * @group FW Attitude Control
+ */
+PARAM_DEFINE_FLOAT(FW_INDI_RLL_OMG, 8.0f);
+
+/**
+ * Lp of lat-dir EOM
+ *
+ * @min -5000.0
+ * @max 5000.0
+ * @decimal 1
+ * @increment 0.1
+ * @group FW Attitude Control
+ */
+PARAM_DEFINE_FLOAT(FW_INDI_RLL_A, -16.0f);
+
+/**
+ * Control Efficiency of aileron (Control matrix of state-space)
+ *
+ * The stall airspeed (calibrated airspeed) of the vehicle.
+ * It is used for airspeed sensor failure detection and for the control
+ * surface scaling airspeed limits.
+ *
+ * @min -5000.0
+ * @max 5000.0
+ * @decimal 1
+ * @increment 0.1
+ * @group FW Attitude Control
+ */
+PARAM_DEFINE_FLOAT(FW_INDI_RLL_B, -50.0f);
+
+/**
+ * Switch of fw att control method for roll
+ *
+ * @value 0 PID
+ * @value 1 INDI
+ *
+ * @group FW Attitude Control
+ */
+PARAM_DEFINE_INT32(FW_INDI_RLL_SW, 0);

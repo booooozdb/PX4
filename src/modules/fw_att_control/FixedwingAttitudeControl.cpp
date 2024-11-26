@@ -91,6 +91,11 @@ FixedwingAttitudeControl::parameters_update()
 	_pitch_ctrl.set_k_i(_param_fw_pr_i.get());
 	_pitch_ctrl.set_k_ff(_param_fw_pr_ff.get());
 	_pitch_ctrl.set_integrator_max(_param_fw_pr_imax.get());
+	// INDI
+	_pitch_ctrl.set_INDI_kp_rate(_param_INDI_pitch_kp.get());
+	_pitch_ctrl.set_INDI_omega(_param_INDI_pitch_omega.get());
+	_pitch_ctrl.set_INDI_B(_param_INDI_pitch_B.get());
+	_INDI_pitch_sw = _param_INDI_pitch_sw.get();
 
 	/* roll control parameters */
 	_roll_ctrl.set_time_constant(_param_fw_r_tc.get());
@@ -98,6 +103,12 @@ FixedwingAttitudeControl::parameters_update()
 	_roll_ctrl.set_k_i(_param_fw_rr_i.get());
 	_roll_ctrl.set_k_ff(_param_fw_rr_ff.get());
 	_roll_ctrl.set_integrator_max(_param_fw_rr_imax.get());
+	// INDI
+	_roll_ctrl.set_INDI_kp_rate(_param_INDI_roll_kp.get());
+	_roll_ctrl.set_INDI_omega(_param_INDI_roll_omega.get());
+	_roll_ctrl.set_INDI_A(_param_INDI_roll_A.get());
+	_roll_ctrl.set_INDI_B(_param_INDI_roll_B.get());
+	_INDI_roll_sw = _param_INDI_roll_sw.get();
 
 	/* yaw control parameters */
 	_yaw_ctrl.set_k_p(_param_fw_yr_p.get());
@@ -283,6 +294,14 @@ void FixedwingAttitudeControl::Run()
 	vehicle_attitude_s att;
 
         if (_att_sub.update(&att)) {
+
+		// 仿真模式下输出 V=11.1v，是由batterySimulator.cpp发送的
+		// 正常模式下，输出与真实值一致
+		// battery_status_s battery_status1{};
+		// if (_battery_status_sub.copy(&battery_status1)) {
+		// 	PX4_INFO("batt: %.2f, %.2f",(double)battery_status1.voltage_v, (double)battery_status1.remaining);
+		// }
+
 
 		// only update parameters if they changed
 		bool params_updated = _parameter_update_sub.updated();
@@ -529,14 +548,42 @@ void FixedwingAttitudeControl::Run()
 					control_input.yaw_rate_setpoint = _yaw_ctrl.get_desired_rate();
 
 					/* Run attitude RATE controllers which need the desired attitudes from above, add trim */
-					float roll_u = _roll_ctrl.control_euler_rate(dt, control_input);
+					// float roll_u = _roll_ctrl.control_euler_rate(dt, control_input);
+					float roll_u = 0.f;
+                    if (_INDI_roll_sw == 1 && _manual_control_setpoint.aux6 > 0) {
+						// INDI控制
+						if( _INDI_roll_sw_old != _INDI_roll_sw) {
+							_roll_ctrl.reset_INDI();
+							PX4_INFO("reset_INDI");
+						}
+						roll_u = _roll_ctrl.control_euler_rate_INDI(dt, control_input);
+					}
+					else {
+						roll_u = _roll_ctrl.control_euler_rate(dt, control_input);
+					}
+					_INDI_roll_sw_old = _INDI_roll_sw;
+
 					_actuators.control[actuator_controls_s::INDEX_ROLL] = (PX4_ISFINITE(roll_u)) ? roll_u + trim_roll : trim_roll;
 
 					if (!PX4_ISFINITE(roll_u)) {
 						_roll_ctrl.reset_integrator();
 					}
 
-					float pitch_u = _pitch_ctrl.control_euler_rate(dt, control_input);
+					// float pitch_u = _pitch_ctrl.control_euler_rate(dt, control_input);
+					float pitch_u = 0.f;
+					if (_INDI_pitch_sw == 1 && _manual_control_setpoint.aux6>0 ) {
+						// INDI控制
+						if( _INDI_pitch_sw_old != _INDI_pitch_sw) {
+							_pitch_ctrl.reset_INDI();
+							PX4_INFO("reset_INDI");
+						}
+						pitch_u = _pitch_ctrl.control_euler_rate_INDI(dt, control_input);
+					}
+					else {
+						pitch_u = _pitch_ctrl.control_euler_rate(dt, control_input);
+					}
+					_INDI_pitch_sw_old = _INDI_pitch_sw;
+
 					_actuators.control[actuator_controls_s::INDEX_PITCH] = (PX4_ISFINITE(pitch_u)) ? pitch_u + trim_pitch : trim_pitch;
 
 					if (!PX4_ISFINITE(pitch_u)) {

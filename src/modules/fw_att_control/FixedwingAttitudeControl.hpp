@@ -205,6 +205,17 @@ private:
 		(ParamFloat<px4::params::FW_YR_IMAX>) _param_fw_yr_imax,
 		(ParamFloat<px4::params::FW_YR_P>) _param_fw_yr_p,
 
+		(ParamFloat<px4::params::FW_INDI_PIT_KP>) _param_INDI_pitch_kp,
+		(ParamFloat<px4::params::FW_INDI_PIT_OMG>) _param_INDI_pitch_omega,
+		(ParamFloat<px4::params::FW_INDI_PIT_B>) _param_INDI_pitch_B,
+		(ParamBool<px4::params::FW_INDI_PIT_SW>) _param_INDI_pitch_sw,
+
+		(ParamFloat<px4::params::FW_INDI_RLL_KP>) _param_INDI_roll_kp,
+		(ParamFloat<px4::params::FW_INDI_RLL_OMG>) _param_INDI_roll_omega,
+		(ParamFloat<px4::params::FW_INDI_RLL_A>) _param_INDI_roll_A,
+		(ParamFloat<px4::params::FW_INDI_RLL_B>) _param_INDI_roll_B,
+		(ParamBool<px4::params::FW_INDI_RLL_SW>) _param_INDI_roll_sw,
+
 		(ParamFloat<px4::params::TRIM_PITCH>) _param_trim_pitch,
 		(ParamFloat<px4::params::TRIM_ROLL>) _param_trim_roll,
 		(ParamFloat<px4::params::TRIM_YAW>) _param_trim_yaw
@@ -229,6 +240,13 @@ private:
 	void		vehicle_land_detected_poll();
 
 	float 		get_airspeed_and_update_scaling();
+
+	// INDI
+	bool _INDI_pitch_sw = 0;
+	uint8_t _INDI_pitch_sw_old = 0;
+
+	bool _INDI_roll_sw = 0;
+	uint8_t _INDI_roll_sw_old = 0;
 
     uint16_t    _count = 0;
 };

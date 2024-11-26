@@ -26,6 +26,8 @@
 param set-default PWM_AUX_RATE 50
 param set-default PWM_MAIN_RATE 50
 
+param set-default COM_VEHICLE_ID 2
+
 set MIXER AETRFG
 
 # Rate must be set by group (see pwm info).

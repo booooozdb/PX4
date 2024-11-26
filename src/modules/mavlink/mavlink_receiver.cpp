@@ -108,6 +108,13 @@ MavlinkReceiver::acknowledge(uint8_t sysid, uint8_t compid, uint16_t command, ui
 void
 MavlinkReceiver::handle_message(mavlink_message_t *msg)
 {
+
+//    // WR revised
+//    if( msg->sysid == 5 )
+//    {
+//        PX4_INFO("sysid = %d, msgid = %d", msg->sysid, msg->msgid);
+//    }
+
 	switch (msg->msgid) {
 	case MAVLINK_MSG_ID_COMMAND_LONG:
 		handle_message_command_long(msg);
@@ -288,6 +295,14 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		handle_message_gimbal_device_information(msg);
 		break;
 
+    // WR revised
+    case MAVLINK_MSG_ID_ATTITUDE:
+        handle_message_attitude(msg);
+        break;
+    case MAVLINK_MSG_ID_SERVO_OUTPUT_RAW:
+        handle_message_servo_output_raw(msg);
+        break;
+
 	default:
 		break;
 	}
@@ -303,6 +318,7 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 	 * This allows to provide fake gps measurements to the system.
 	 */
 
+    // WR revised, 20241024
 //        PX4_INFO("hil_enabled = %d, msgid = %d", _mavlink->get_hil_enabled(), msg->msgid);
 
 	if (_mavlink->get_hil_enabled()) {
@@ -312,12 +328,20 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 			break;
 
 		case MAVLINK_MSG_ID_HIL_STATE_QUATERNION:
-			handle_message_hil_state_quaternion(msg);
+            // WR revised, 20241024
+//            PX4_INFO("Receiving HIL_STATE_QUATERNION!");
+            handle_message_hil_state_quaternion(msg);
 			break;
 
 		case MAVLINK_MSG_ID_HIL_OPTICAL_FLOW:
 			handle_message_hil_optical_flow(msg);
 			break;
+
+        case MAVLINK_MSG_ID_WIND_COV:
+                // WR revised, 20241024
+//            PX4_INFO("Receiving MAVLINK_MSG_ID_WIND_COV!");
+            handle_message_wind_cov_hil(msg);
+            break;
 
 		default:
 			break;
@@ -764,6 +788,103 @@ MavlinkReceiver::handle_message_hil_optical_flow(mavlink_message_t *msg)
 	d.variance = 0.0;
 
 	_flow_distance_sensor_pub.publish(d);
+}
+
+void
+MavlinkReceiver::handle_message_wind_cov_hil(mavlink_message_t *msg)
+{
+    /* wind_cov */
+    mavlink_wind_cov_t flow;
+    mavlink_msg_wind_cov_decode(msg, &flow);
+
+    airdata_hil_s airdata_hil {}; /**< wind data from HIL, custom topic */
+
+    airdata_hil.windspeed_north = flow.wind_x;
+    airdata_hil.windspeed_east = flow.wind_y;
+    airdata_hil.windspeed_down = flow.wind_z;
+
+    airdata_hil.beta = flow.horiz_accuracy;    // beta, [rad]
+    airdata_hil.alpha = flow.vert_accuracy;    // alpha, [rad]
+
+
+    airdata_hil.timestamp = hrt_absolute_time(); // XXX we rely on the system time for now and not flow.time_usec;
+
+    _airdata_hil_pub.publish(airdata_hil);
+
+//    PX4_INFO("WS_N = %.3f", (double)airdata_hil.windspeed_north);
+
+}
+
+// WR revised
+void MavlinkReceiver::handle_message_attitude(mavlink_message_t *msg)
+{
+//    PX4_INFO("MavlinkReceiver::handle_message_attitude()");
+
+    // TODO: 不是自己的attitude才解包-发布
+//    if( msg->sysid != 3)
+
+    mavlink_attitude_t flow;
+    mavlink_msg_attitude_decode(msg, &flow);
+
+//    vehicle_attitude_s vehicle_attitude{};
+
+    const matrix::Eulerf euler_angles(flow.roll, flow.pitch, flow.yaw);
+//    const matrix::Quaternionf quat(euler_angles);
+
+
+//    vehicle_attitude.timestamp = (uint64_t)flow.time_boot_ms;
+//    vehicle_attitude.q = quat;
+//    vehicle_attitude.q[0] = flow.pitch;
+//    vehicle_attitude.q[1] = flow.q2;
+//    vehicle_attitude.q[2] = flow.q3;
+//    vehicle_attitude.q[3] = flow.q4;
+
+//    if( _count % 100 == 0 )
+    {
+        PX4_INFO("sys_id = %d, ATT = %.1f, %.1f, %.1f",
+                 msg->sysid,
+                 (double)(euler_angles.phi()*57.3f),
+                 (double)(euler_angles.theta()*57.3f),
+                 (double)(euler_angles.psi()*57.3f) );
+    }
+//    _count++;
+
+}
+
+//void MavlinkReceiver::handle_message_attitude_quaternion(mavlink_message_t *msg)
+//{
+//    // TODO: 不是自己的attitude才解包-发布
+////    if( msg->sysid != 3)
+
+//    mavlink_attitude_quaternion_t flow;
+//    mavlink_msg_attitude_decode(msg, &flow);
+
+//    vehicle_attitude_s vehicle_attitude{};
+
+//    vehicle_attitude.timestamp = (uint64_t)flow.time_boot_ms;
+//    vehicle_attitude.q[0] = flow.q1;
+//    vehicle_attitude.q[1] = flow.q2;
+//    vehicle_attitude.q[2] = flow.q3;
+//    vehicle_attitude.q[3] = flow.q4;
+
+//    if( _count % 100 == 0 ) {
+//        PX4_INFO("sys_id = %d, ATT = %.3f, %.3f, %.3f, %.3f",
+//                 msg->sysid,
+//                 (double)vehicle_attitude.q[0],
+//                 (double)vehicle_attitude.q[1],
+//                 (double)vehicle_attitude.q[2],
+//                 (double)vehicle_attitude.q[3] );
+//    }
+
+//}
+
+void MavlinkReceiver::handle_message_servo_output_raw(mavlink_message_t *msg)
+{
+    mavlink_servo_output_raw_t flow;
+    mavlink_msg_servo_output_raw_decode(msg, &flow);
+
+    PX4_INFO("sys_id = %d, SEV = %d, %d, %d,  %d",
+             msg->sysid, flow.servo1_raw, flow.servo2_raw, flow.servo3_raw, flow.servo4_raw );
 }
 
 void

@@ -104,7 +104,7 @@
 #include <uORB/topics/vehicle_trajectory_bezier.h>
 #include <uORB/topics/vehicle_trajectory_waypoint.h>
 #include <uORB/topics/vehicle_air_data.h>
-
+#include <uORB/topics/airdata_hil.h>
 #if !defined(CONSTRAINED_FLASH)
 # include <uORB/topics/debug_array.h>
 # include <uORB/topics/debug_key_value.h>
@@ -190,6 +190,12 @@ private:
 	void handle_message_gimbal_manager_set_attitude(mavlink_message_t *msg);
 	void handle_message_gimbal_manager_set_manual_control(mavlink_message_t *msg);
 	void handle_message_gimbal_device_information(mavlink_message_t *msg);
+
+    // WR revised
+    void handle_message_wind_cov_hil(mavlink_message_t *msg);
+    void handle_message_attitude(mavlink_message_t *msg);
+//    void handle_message_attitude_quaternion(mavlink_message_t *msg);
+    void handle_message_servo_output_raw(mavlink_message_t *msg);
 
 #if !defined(CONSTRAINED_FLASH)
 	void handle_message_debug(mavlink_message_t *msg);
@@ -315,6 +321,8 @@ private:
 	uORB::Publication<vehicle_command_s>     _cmd_pub{ORB_ID(vehicle_command)};
 	uORB::Publication<vehicle_command_ack_s> _cmd_ack_pub{ORB_ID(vehicle_command_ack)};
 
+    uORB::Publication<airdata_hil_s> _airdata_hil_pub{ORB_ID(airdata_hil)};
+
 	// ORB subscriptions
 	uORB::Subscription	_actuator_armed_sub{ORB_ID(actuator_armed)};
 	uORB::Subscription	_home_position_sub{ORB_ID(home_position)};
@@ -382,4 +390,6 @@ private:
 	// Disallow copy construction and move assignment.
 	MavlinkReceiver(const MavlinkReceiver &) = delete;
 	MavlinkReceiver operator=(const MavlinkReceiver &) = delete;
+
+    uint32_t _count{0};
 };
