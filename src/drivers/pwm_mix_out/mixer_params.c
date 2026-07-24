@@ -1114,7 +1114,10 @@ PARAM_DEFINE_FLOAT(MIXER_WH_SC, 1.0f);
  * @value 3 VTOL_X1
  * @value 4 MYSolar_7m
  * @value 5 VTOL_X2
- * @value 6 TEST
+ * @value 6 XWing
+ * @value 7 Joby
+ * @value 8 hiland270
+ * @value 9 TEST
  * @reboot_required true
  */
 PARAM_DEFINE_INT32(COM_VEHICLE_ID, 0);

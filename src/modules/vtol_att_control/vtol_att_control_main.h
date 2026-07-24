@@ -235,4 +235,6 @@ private:
 	void		vehicle_cmd_poll();
 
 	int 		parameters_update();			//Update local parameter cache
+
+    uint8_t _count{0};
 };

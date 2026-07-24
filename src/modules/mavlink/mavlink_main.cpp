@@ -1646,7 +1646,10 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		break;
 
 	case MAVLINK_MODE_EXTVISION:
-		configure_stream_local("HIGHRES_IMU", unlimited_rate);		// for VIO
+//		configure_stream_local("HIGHRES_IMU", unlimited_rate);		// for VIO
+
+        configure_stream_local("NAV_CONTROLLER_OUTPUT", 20.0f);    //作为上位机发布位置控制指令
+        break;
 
 	// FALLTHROUGH
 	case MAVLINK_MODE_EXTVISIONMIN:

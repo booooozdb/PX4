@@ -656,17 +656,19 @@ void TECS::_update_throttle_setpoint_traditional(const float throttle_cruise)
         // Specific total energy rate = _STE_rate_max is achieved when throttle is set to _throttle_setpoint_max
         // Specific total energy rate = 0 at cruise throttle
         // Specific total energy rate = _STE_rate_min is achieved when throttle is set to _throttle_setpoint_min
-        float throttle_predicted = 0.0f;
+        float throttle_predicted = throttle_cruise;
 
-        if (STE_rate_setpoint >= 0) {
-            // throttle is between cruise and maximum
-            throttle_predicted = throttle_cruise + STE_rate_setpoint / _STE_rate_max * (_throttle_setpoint_max - throttle_cruise);
+        // 预测油门+比例控制油门的话，油门的总控制量太大了。
+        // 改为只用PI控制，这样的阻尼比较好
+//        if (STE_rate_setpoint >= 0) {
+//            // throttle is between cruise and maximum
+//            throttle_predicted = throttle_cruise + STE_rate_setpoint / _STE_rate_max * (_throttle_setpoint_max - throttle_cruise);
 
-        } else {
-            // throttle is between cruise and minimum
-            throttle_predicted = throttle_cruise + STE_rate_setpoint / _STE_rate_min * (_throttle_setpoint_min - throttle_cruise);
+//        } else {
+//            // throttle is between cruise and minimum
+//            throttle_predicted = throttle_cruise + STE_rate_setpoint / _STE_rate_min * (_throttle_setpoint_min - throttle_cruise);
 
-        }
+//        }
 
         // Calculate gain scaler from specific energy rate error to throttle
 //        const float STE_rate_to_throttle = 1.0f / (_STE_rate_max - _STE_rate_min);

@@ -451,8 +451,14 @@ FixedwingPositionControl::status_publish()
 	pos_ctrl_status.target_bearing = _l1_control.target_bearing();
 	pos_ctrl_status.xtrack_error = _l1_control.crosstrack_error();
 
-	pos_ctrl_status.wp_dist = get_distance_to_next_waypoint(_current_latitude, _current_longitude,
-				  _pos_sp_triplet.current.lat, _pos_sp_triplet.current.lon);
+    // WR 20260721
+    // 为了让PX4当上位机，把wp_dist替换为油门
+    // 警告：这样会让想用真正的wp_dist的时候出问题，目前发现control_landing时会用wp_dist判断拉飘等！！！
+//	pos_ctrl_status.wp_dist = get_distance_to_next_waypoint(_current_latitude, _current_longitude,
+//				  _pos_sp_triplet.current.lat, _pos_sp_triplet.current.lon);
+    float throttle = min(get_tecs_thrust(), 1.0f);  // [0, 1]
+    throttle = max(0.0f, throttle);  // [0, 1]
+    pos_ctrl_status.wp_dist = 1000.f + throttle * 1000.f;
 
 	pos_ctrl_status.acceptance_radius = _l1_control.switch_distance(500.0f);
 
@@ -1603,7 +1609,8 @@ FixedwingPositionControl::control_landing(const hrt_abstime &now, const Vector2d
 		}
 
 		const float airspeed_land = _param_fw_lnd_airspd_sc.get() * _param_fw_airspd_min.get();
-		const float throttle_land = _param_fw_thr_min.get() + (_param_fw_thr_max.get() - _param_fw_thr_min.get()) * 0.1f;
+        const float throttle_land = math::gradual3(-_local_pos.vz, -_param_fw_t_sink_max.get(), 0.f, _param_fw_t_clmb_max.get(),
+                                                        _param_fw_thr_min.get(), _param_fw_thr_cruise.get(), _param_fw_thr_max.get());
 
 		tecs_update_pitch_throttle(now, terrain_alt + flare_curve_alt_rel,
 					   calculate_target_airspeed(airspeed_land, ground_speed),
@@ -1672,6 +1679,8 @@ FixedwingPositionControl::control_landing(const hrt_abstime &now, const Vector2d
 		}
 
 		const float airspeed_approach = _param_fw_lnd_airspd_sc.get() * _param_fw_airspd_min.get();
+        const float throttle_land = math::gradual3(-_local_pos.vz, -_param_fw_t_sink_max.get(), 0.f, _param_fw_t_clmb_max.get(),
+                                                        _param_fw_thr_min.get(), _param_fw_thr_cruise.get(), _param_fw_thr_max.get());
 
 		tecs_update_pitch_throttle(now, altitude_desired,
 					   calculate_target_airspeed(airspeed_approach, ground_speed),
@@ -1679,7 +1688,7 @@ FixedwingPositionControl::control_landing(const hrt_abstime &now, const Vector2d
 					   radians(_param_fw_p_lim_max.get()),
 					   _param_fw_thr_min.get(),
 					   _param_fw_thr_max.get(),
-					   _param_fw_thr_cruise.get(),
+                       throttle_land,
 					   false,
 					   radians(_param_fw_p_lim_min.get()));
 	}

@@ -104,5 +104,7 @@ private:
 	hrt_abstime _last_timestamp_disarmed{0}; /**< used for calculating time since arming */
 	bool _tilt_motors_for_startup{false};
 
+    uint8_t _count{0};
+
 };
 #endif

@@ -312,12 +312,12 @@ VtolAttitudeControl::parameters_update()
 void
 VtolAttitudeControl::Run()
 {
-	if (should_exit()) {
+    if (should_exit()) {
 		_actuator_inputs_fw.unregisterCallback();
 		_actuator_inputs_mc.unregisterCallback();
 		exit_and_cleanup();
 		return;
-	}
+    }
 
 	const hrt_abstime now = hrt_absolute_time();
 
@@ -333,13 +333,13 @@ VtolAttitudeControl::Run()
 	_last_run_timestamp = now;
 
 	if (!_initialized) {
-		parameters_update();  // initialize parameter cache
+        parameters_update();  // initialize parameter cache
 
 		if (_vtol_type->init()) {
 			_initialized = true;
 
-		} else {
-			exit_and_cleanup();
+        } else {
+            exit_and_cleanup();
 			return;
 		}
 	}
@@ -461,10 +461,16 @@ VtolAttitudeControl::Run()
 		_actuators_0_pub.publish(_actuators_out_0);
 		_actuators_1_pub.publish(_actuators_out_1);
 
+//        if( _count % 100 == 0 ) {
+//            PX4_INFO("tilt: %d, %.2f", (int)_vtol_type->get_mode(), (double)_actuators_out_1.control[actuator_controls_s::INDEX_FLAPS]);
+//        }
+
 		// Advertise/Publish vtol vehicle status
 		_vtol_vehicle_status.timestamp = hrt_absolute_time();
 		_vtol_vehicle_status_pub.publish(_vtol_vehicle_status);
 	}
+
+    _count++;
 
 	perf_end(_loop_perf);
 }

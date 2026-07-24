@@ -183,7 +183,7 @@ MulticopterRateControl::Run()
 				v_rates_sp.thrust_body[2] = -_thrust_sp;
 				v_rates_sp.timestamp = hrt_absolute_time();
 
-				_v_rates_sp_pub.publish(v_rates_sp);
+                _v_rates_sp_pub.publish(v_rates_sp);
 			}
 
 		} else {
@@ -195,6 +195,8 @@ MulticopterRateControl::Run()
 				_rates_sp(1) = PX4_ISFINITE(v_rates_sp.pitch) ? v_rates_sp.pitch : rates(1);
 				_rates_sp(2) = PX4_ISFINITE(v_rates_sp.yaw)   ? v_rates_sp.yaw   : rates(2);
 				_thrust_sp = -v_rates_sp.thrust_body[2];
+
+//                PX4_INFO("rate_sp: %.2f, %.2f, %.2f, %.2f", (double)_rates_sp(0), (double)_rates_sp(1), (double)_rates_sp(2), (double)_thrust_sp);
 			}
 		}
 
@@ -234,7 +236,7 @@ MulticopterRateControl::Run()
 			actuators.control[actuator_controls_s::INDEX_YAW] = PX4_ISFINITE(att_control(2)) ? att_control(2) : 0.0f;
 			actuators.control[actuator_controls_s::INDEX_THROTTLE] = PX4_ISFINITE(_thrust_sp) ? _thrust_sp : 0.0f;
 			actuators.control[actuator_controls_s::INDEX_LANDING_GEAR] = _landing_gear;
-			actuators.timestamp_sample = angular_velocity.timestamp_sample;
+            actuators.timestamp_sample = angular_velocity.timestamp_sample;
 
 			// scale effort by battery status if enabled
 			if (_param_mc_bat_scale_en.get()) {
@@ -256,6 +258,8 @@ MulticopterRateControl::Run()
 			actuators.timestamp = hrt_absolute_time();
 			_actuators_0_pub.publish(actuators);
 
+//            PX4_INFO("att_sp: %.2f, %.2f, %.2f, %.2f", (double)att_control(0), (double)att_control(1), (double)att_control(2), (double)_thrust_sp);
+
 		} else if (_v_control_mode.flag_control_termination_enabled) {
 			if (!_vehicle_status.is_vtol) {
 				// publish actuator controls
@@ -264,7 +268,9 @@ MulticopterRateControl::Run()
 				_actuators_0_pub.publish(actuators);
 			}
 		}
-	}
+    }
+
+    _count++;
 
 	perf_end(_loop_perf);
 }

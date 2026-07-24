@@ -81,41 +81,41 @@ VtolType::VtolType(VtolAttitudeControl *att_controller) :
 
 bool VtolType::init()
 {
-	const char *dev = _params->vt_mc_on_fmu ? PWM_OUTPUT1_DEVICE_PATH : PWM_OUTPUT0_DEVICE_PATH;
+//	const char *dev = _params->vt_mc_on_fmu ? PWM_OUTPUT1_DEVICE_PATH : PWM_OUTPUT0_DEVICE_PATH;
 
-	int fd = px4_open(dev, 0);
+//	int fd = px4_open(dev, 0);
 
-	if (fd < 0) {
-		PX4_ERR("can't open %s", dev);
-		return false;
-	}
+//	if (fd < 0) {
+//		PX4_ERR("can't open %s", dev);
+//		return false;
+//	}
 
-	int ret = px4_ioctl(fd, PWM_SERVO_GET_MAX_PWM, (long unsigned int)&_max_mc_pwm_values);
-	_current_max_pwm_values = _max_mc_pwm_values;
+//	int ret = px4_ioctl(fd, PWM_SERVO_GET_MAX_PWM, (long unsigned int)&_max_mc_pwm_values);
+//	_current_max_pwm_values = _max_mc_pwm_values;
 
-	if (ret != PX4_OK) {
-		PX4_ERR("failed getting max values");
-		px4_close(fd);
-		return false;
-	}
+//	if (ret != PX4_OK) {
+//		PX4_ERR("failed getting max values");
+//		px4_close(fd);
+//		return false;
+//	}
 
-	ret = px4_ioctl(fd, PWM_SERVO_GET_MIN_PWM, (long unsigned int)&_min_mc_pwm_values);
+//	ret = px4_ioctl(fd, PWM_SERVO_GET_MIN_PWM, (long unsigned int)&_min_mc_pwm_values);
 
-	if (ret != PX4_OK) {
-		PX4_ERR("failed getting min values");
-		px4_close(fd);
-		return false;
-	}
+//	if (ret != PX4_OK) {
+//		PX4_ERR("failed getting min values");
+//		px4_close(fd);
+//		return false;
+//	}
 
-	ret = px4_ioctl(fd, PWM_SERVO_GET_DISARMED_PWM, (long unsigned int)&_disarmed_pwm_values);
+//	ret = px4_ioctl(fd, PWM_SERVO_GET_DISARMED_PWM, (long unsigned int)&_disarmed_pwm_values);
 
-	if (ret != PX4_OK) {
-		PX4_ERR("failed getting disarmed values");
-		px4_close(fd);
-		return false;
-	}
+//	if (ret != PX4_OK) {
+//		PX4_ERR("failed getting disarmed values");
+//		px4_close(fd);
+//		return false;
+//	}
 
-	px4_close(fd);
+//	px4_close(fd);
 
 	_main_motor_channel_bitmap = generate_bitmap_from_channel_numbers(_params->vtol_motor_id);
 	_alternate_motor_channel_bitmap = generate_bitmap_from_channel_numbers(_params->fw_motors_off);
@@ -344,31 +344,31 @@ bool VtolType::set_idle_fw()
 
 bool VtolType::apply_pwm_limits(struct pwm_output_values &pwm_values, pwm_limit_type type)
 {
-	const char *dev = _params->vt_mc_on_fmu ? PWM_OUTPUT1_DEVICE_PATH : PWM_OUTPUT0_DEVICE_PATH;
+//	const char *dev = _params->vt_mc_on_fmu ? PWM_OUTPUT1_DEVICE_PATH : PWM_OUTPUT0_DEVICE_PATH;
 
-	int fd = px4_open(dev, 0);
+//	int fd = px4_open(dev, 0);
 
-	if (fd < 0) {
-		PX4_WARN("can't open %s", dev);
-		return false;
-	}
+//	if (fd < 0) {
+//		PX4_WARN("can't open %s", dev);
+//		return false;
+//	}
 
-	int ret;
+//	int ret;
 
-	if (type == pwm_limit_type::TYPE_MINIMUM) {
-		ret = px4_ioctl(fd, PWM_SERVO_SET_MIN_PWM, (long unsigned int)&pwm_values);
+//	if (type == pwm_limit_type::TYPE_MINIMUM) {
+//		ret = px4_ioctl(fd, PWM_SERVO_SET_MIN_PWM, (long unsigned int)&pwm_values);
 
-	} else {
-		ret = px4_ioctl(fd, PWM_SERVO_SET_MAX_PWM, (long unsigned int)&pwm_values);
-	}
+//	} else {
+//		ret = px4_ioctl(fd, PWM_SERVO_SET_MAX_PWM, (long unsigned int)&pwm_values);
+//	}
 
-	px4_close(fd);
+//	px4_close(fd);
 
 
-	if (ret != OK) {
-		PX4_DEBUG("failed setting max values");
-		return false;
-	}
+//	if (ret != OK) {
+//		PX4_DEBUG("failed setting max values");
+//		return false;
+//	}
 
 	return true;
 }

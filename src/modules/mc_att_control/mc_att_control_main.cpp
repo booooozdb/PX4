@@ -298,7 +298,7 @@ MulticopterAttitudeControl::Run()
 
 		if (run_att_ctrl) {
 
-			const Quatf q{v_att.q};
+            const Quatf q{v_att.q};
 
 			// Generate the attitude setpoint from stick inputs if we are in Manual/Stabilized mode
 			if (_v_control_mode.flag_control_manual_enabled &&
@@ -325,7 +325,7 @@ MulticopterAttitudeControl::Run()
 			v_rates_sp.timestamp = hrt_absolute_time();
 
 			_v_rates_sp_pub.publish(v_rates_sp);
-		}
+        }
 
 		// reset yaw setpoint during transitions, tailsitter.cpp generates
 		// attitude setpoint for the transition

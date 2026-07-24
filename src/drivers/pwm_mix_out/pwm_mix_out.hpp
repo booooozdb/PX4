@@ -61,6 +61,8 @@
 #include <uORB/topics/actuator_outputs.h>
 #include <uORB/topics/multirotor_motor_limits.h>
 #include <uORB/topics/parameter_update.h>
+#include <uORB/topics/vehicle_status.h>
+#include <vtol_att_control/vtol_type.h>
 #include <px4_platform_common/module_params.h>
 #include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
 //#include <px4_platform_common/px4_work_queue/WorkItem.hpp>
@@ -77,11 +79,10 @@ typedef enum
     MYSolar_7m			= 4,		// MeiYing solar-powered uav, span = 7m, 16kg
     VTOL_X2				= 5,		// 18 ducts, 14kg
     XWing				= 6,		// 18 ducts, 14kg
-    x1mini				= 7,		// 3kg, 8 propellers, vtol
+    Joby				= 7,		// 3kg, 8 propellers, vtol
     hiland270			= 8,		// 270kg, 8 propellers, standard fw
     TEST				= 9		// test
 } vehicle_id_e;
-
 
 using namespace time_literals;
 
@@ -139,11 +140,13 @@ private:
     uint32_t	_backup_schedule_interval_us{1_s};
 
 
-
+    // subscript
     uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
     uORB::Subscription _actuator_armed_sub{ORB_ID(actuator_armed)};
     uORB::Subscription _actuator_controls_0_sub{ORB_ID(actuator_controls_0)};
     uORB::Subscription _actuator_controls_1_sub{ORB_ID(actuator_controls_1)};
+//    uORB::Subscription _actuator_controls_virtual_mc_sub{ORB_ID(actuator_controls_virtual_mc)};
+//    uORB::Subscription _actuator_controls_virtual_fw_sub{ORB_ID(actuator_controls_virtual_fw)};
     uORB::SubscriptionCallbackWorkItem _control_subs[actuator_controls_s::NUM_ACTUATOR_CONTROL_GROUPS] {
                 {this, ORB_ID(actuator_controls_0), 0},
                 {this, ORB_ID(actuator_controls_1), 1},
@@ -154,8 +157,9 @@ private:
     };
 
     uORB::Subscription _actuator_dsc_sub{ORB_ID(actuator_controls_dsc)};
+    uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};			/**< vehicle status subscription */
 
-
+    // Publish
     uORB::PublicationMulti<actuator_outputs_s> _actuator_outputs_pub{ORB_ID(actuator_outputs)};
 
     unsigned	_num_outputs{14};
@@ -194,6 +198,8 @@ private:
     actuator_outputs_s _actuator_outputs{};
     actuator_controls_s _actuator_controls_0{};
     actuator_controls_s _actuator_controls_1{};
+//    actuator_controls_s _actuator_controls_virtual_mc{};
+//    actuator_controls_s _actuator_controls_virtual_fw{};
 
     actuator_controls_s _actuator_controls_dsc{};
 
@@ -311,91 +317,6 @@ private:
 
     );
 
-//     uint16_t pwm_main1_max{0};
-//     uint16_t pwm_main2_max{0};
-//     uint16_t pwm_main3_max{0};
-//     uint16_t pwm_main4_max{0};
-//     uint16_t pwm_main5_max{0};
-//     uint16_t pwm_main6_max{0};
-//     uint16_t pwm_main7_max{0};
-//     uint16_t pwm_main8_max{0};
-//     uint16_t pwm_aux1_max{0};
-//     uint16_t pwm_aux2_max{0};
-//     uint16_t pwm_aux3_max{0};
-//     uint16_t pwm_aux4_max{0};
-//     uint16_t pwm_aux5_max{0};
-//     uint16_t pwm_aux6_max{0};
-//     uint16_t pwm_aux7_max{0};
-//     uint16_t pwm_aux8_max{0};
-
-//     uint16_t pwm_main1_min{0};
-//     uint16_t pwm_main2_min{0};
-//     uint16_t pwm_main3_min{0};
-//     uint16_t pwm_main4_min{0};
-//     uint16_t pwm_main5_min{0};
-//     uint16_t pwm_main6_min{0};
-//     uint16_t pwm_main7_min{0};
-//     uint16_t pwm_main8_min{0};
-//     uint16_t pwm_aux1_min{0};
-//     uint16_t pwm_aux2_min{0};
-//     uint16_t pwm_aux3_min{0};
-//     uint16_t pwm_aux4_min{0};
-//     uint16_t pwm_aux5_min{0};
-//     uint16_t pwm_aux6_min{0};
-//     uint16_t pwm_aux7_min{0};
-//     uint16_t pwm_aux8_min{0};
-
-//     uint16_t pwm_main1_trim{0};
-//     uint16_t pwm_main2_trim{0};
-//     uint16_t pwm_main3_trim{0};
-//     uint16_t pwm_main4_trim{0};
-//     uint16_t pwm_main5_trim{0};
-//     uint16_t pwm_main6_trim{0};
-//     uint16_t pwm_main7_trim{0};
-//     uint16_t pwm_main8_trim{0};
-//     uint16_t pwm_aux1_trim{0};
-//     uint16_t pwm_aux2_trim{0};
-//     uint16_t pwm_aux3_trim{0};
-//     uint16_t pwm_aux4_trim{0};
-//     uint16_t pwm_aux5_trim{0};
-//     uint16_t pwm_aux6_trim{0};
-//     uint16_t pwm_aux7_trim{0};
-//     uint16_t pwm_aux8_trim{0};
-
-//     float pwm_main1_max_x{0};
-//     float pwm_main2_max_x{0};
-//     float pwm_main3_max_x{0};
-//     float pwm_main4_max_x{0};
-//     float pwm_main5_max_x{0};
-//     float pwm_main6_max_x{0};
-//     float pwm_main7_max_x{0};
-//     float pwm_main8_max_x{0};
-//     float pwm_aux1_max_x{0};
-//     float pwm_aux2_max_x{0};
-//     float pwm_aux3_max_x{0};
-//     float pwm_aux4_max_x{0};
-//     float pwm_aux5_max_x{0};
-//     float pwm_aux6_max_x{0};
-//     float pwm_aux7_max_x{0};
-//     float pwm_aux8_max_x{0};
-
-//     float pwm_main1_min_x{0};
-//     float pwm_main2_min_x{0};
-//     float pwm_main3_min_x{0};
-//     float pwm_main4_min_x{0};
-//     float pwm_main5_min_x{0};
-//     float pwm_main6_min_x{0};
-//     float pwm_main7_min_x{0};
-//     float pwm_main8_min_x{0};
-//     float pwm_aux1_min_x{0};
-//     float pwm_aux2_min_x{0};
-//     float pwm_aux3_min_x{0};
-//     float pwm_aux4_min_x{0};
-//     float pwm_aux5_min_x{0};
-//     float pwm_aux6_min_x{0};
-//     float pwm_aux7_min_x{0};
-//     float pwm_aux8_min_x{0};
-
      float thr_alloc_threshold = 0.0f;  // 当油门输入大于这个值时其它组才输出
      float thr_rud_sc = 0.2f;  // 油门差动辅助控制航向的比例, dd = thr_rud_sc * dr
      float thr_ele_sc = 0.2f;  // 油门差动辅助控制俯仰的比例, dd = thr_ele_sc * de
@@ -405,6 +326,27 @@ private:
      float param_fw_thr_max = 1.f;
 
     uint32_t _VEHICLE_ID{0};
+
+    bool _vehicle_type_rotary_wing{0};
+    bool _vtol{0};
+    bool _vtol_tailsitter{false};
+    bool _vtol_in_transition_mode{0};
+
+    float _roll{0};
+    float _pitch{0};
+    float _yaw{0};
+    float _thr{0};
+    float _flap{0};
+    float _gear{0};
+    float _roll_mc{0};
+    float _pitch_mc{0};
+    float _yaw_mc{0};
+    float _thr_mc{0};
+    float _roll_fw{0};
+    float _pitch_fw{0};
+    float _yaw_fw{0};
+    float _thr_fw{0};
+
 
 //    DEFINE_PARAMETERS(
 //            (ParamFloat<px4::params::FW_THR_MAX>) _param_fw_thr_max,
