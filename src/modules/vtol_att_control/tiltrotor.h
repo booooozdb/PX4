@@ -103,6 +103,13 @@ private:
 	void parameters_update() override;
 	hrt_abstime _last_timestamp_disarmed{0}; /**< used for calculating time since arming */
 	bool _tilt_motors_for_startup{false};
+	bool _reset_fw_pitch_integrator{false};
+	bool _fw_pitch_handover_active{false};
+	hrt_abstime _fw_pitch_handover_start_time{0};
+	float _fw_pitch_handover_start_output{0.0f};
+	bool _fw_throttle_handover_active{false};
+	hrt_abstime _fw_throttle_handover_start_time{0};
+	float _fw_throttle_handover_start_output{0.0f};
 
     uint8_t _count{0};
 

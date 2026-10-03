@@ -218,6 +218,7 @@ private:
         (ParamFloat<px4::params::MIXER_ROLL_SC>) _roll_scale,
         (ParamFloat<px4::params::MIXER_PITCH_SC>) _pitch_scale,
         (ParamFloat<px4::params::MIXER_YAW_SC>) _yaw_scale,
+        (ParamFloat<px4::params::MIXER_YAW_TILT>) _yaw_tilt_scale,
         (ParamFloat<px4::params::MIXER_WH_SC>) _wh_scale,
 
         (ParamFloat<px4::params::PWM_MAIN1_MAX>) _pwm_main1_max,

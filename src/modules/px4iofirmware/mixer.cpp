@@ -102,7 +102,7 @@ static MixerGroup mixer_group;
 void
 mixer_tick()
 {
-    PX4_INFO("mixer_tick()");
+    //PX4_INFO("mixer_tick()");
 
 	/* check if the mixer got modified */
 	mixer_handle_text_create_mixer();

@@ -131,6 +131,7 @@ void Tiltrotor::update_vtol_state()
 			_vtol_schedule.flight_mode = vtol_mode::MC_MODE;
 			break;
 
+
 		case vtol_mode::TRANSITION_BACK:
 			const float time_since_trans_start = (float)(hrt_absolute_time() - _vtol_schedule.transition_start) * 1e-6f;
 			const float ground_speed = sqrtf(_local_pos->vx * _local_pos->vx + _local_pos->vy * _local_pos->vy);
@@ -189,8 +190,21 @@ void Tiltrotor::update_vtol_state()
 
 			// if the rotors have been tilted completely we switch to fw mode
 			if (_tilt_control >= _params_tiltrotor.tilt_fw) {
+				const hrt_abstime handover_start_time = hrt_absolute_time();
+
+				_fw_pitch_handover_active = true;
+				_fw_pitch_handover_start_time = handover_start_time;
+				_fw_pitch_handover_start_output =
+					_actuators_out_1->control[actuator_controls_s::INDEX_PITCH];
+
+				_fw_throttle_handover_active = true;
+				_fw_throttle_handover_start_time = handover_start_time;
+				_fw_throttle_handover_start_output =
+					_actuators_out_0->control[actuator_controls_s::INDEX_THROTTLE];
+
 				_vtol_schedule.flight_mode = vtol_mode::FW_MODE;
 				_tilt_control = _params_tiltrotor.tilt_fw;
+				_reset_fw_pitch_integrator = true;
 			}
 
 			break;
@@ -273,6 +287,22 @@ void Tiltrotor::update_fw_state()
 {
 	VtolType::update_fw_state();
 
+	// At the first FW update, hold the current pitch to avoid using
+	// the stale transition-time FW pitch setpoint.
+	if (_reset_fw_pitch_integrator) {
+		const Eulerf current_attitude(Quatf(_v_att->q));
+
+		_v_att_sp->pitch_body = current_attitude.theta();
+
+		const Quatf q_sp(Eulerf(_v_att_sp->roll_body,
+				       _v_att_sp->pitch_body,
+				       _v_att_sp->yaw_body));
+		q_sp.copyTo(_v_att_sp->q_d);
+
+		_v_att_sp->pitch_reset_integral = true;
+		_reset_fw_pitch_integrator = false;
+	}
+
 	// make sure motors are tilted forward
 	_tilt_control = _params_tiltrotor.tilt_fw;
 }
@@ -287,6 +317,7 @@ void Tiltrotor::update_transition_state()
 	_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
 
 	float time_since_trans_start = (float)(hrt_absolute_time() - _vtol_schedule.transition_start) * 1e-6f;
+	constexpr float mc_pitch_weight_p2_entry = 0.3f;
 
 	if (!_flag_was_in_trans_mode) {
 		// save desired heading for transition and last thrust value
@@ -309,6 +340,7 @@ void Tiltrotor::update_transition_state()
 
 		// at low speeds give full weight to MC
 		_mc_roll_weight = 1.0f;
+		_mc_pitch_weight = 1.0f;
 		_mc_yaw_weight = 1.0f;
 
 		// reduce MC controls once the plane has picked up speed
@@ -331,6 +363,11 @@ void Tiltrotor::update_transition_state()
 			_mc_yaw_weight = _mc_roll_weight;
 		}
 
+		const float mc_roll_weight_limited =
+			math::constrain(_mc_roll_weight, 0.0f, 1.0f);
+
+		_mc_pitch_weight = mc_pitch_weight_p2_entry+ (1.0f - mc_pitch_weight_p2_entry) * mc_roll_weight_limited;
+
 		_thrust_transition = -_mc_virtual_att_sp->thrust_body[2];
 
 		// in stabilized, acro or manual mode, set the MC thrust to the throttle stick position (coming from the FW attitude setpoint)
@@ -344,8 +381,13 @@ void Tiltrotor::update_transition_state()
 				fabsf(_params_tiltrotor.tilt_fw - _params_tiltrotor.tilt_transition) * time_since_trans_start /
 				_params_tiltrotor.front_trans_dur_p2;
 
-		_mc_roll_weight = 0.0f;
-		_mc_yaw_weight = 0.0f;
+		const float p2_progress = math::constrain(
+					time_since_trans_start / _params_tiltrotor.front_trans_dur_p2,
+					0.0f, 1.0f);
+
+      		_mc_roll_weight = 0.0f;
+      		_mc_pitch_weight = mc_pitch_weight_p2_entry * (1.0f - p2_progress);
+      		_mc_yaw_weight = 0.0f;
 
 		// ramp down motors not used in fixed-wing flight (setting MAX_PWM down scales the given output into the new range)
 		int ramp_down_value = (1.0f - time_since_trans_start / _params_tiltrotor.front_trans_dur_p2) *
@@ -408,6 +450,7 @@ void Tiltrotor::update_transition_state()
 	q_sp.copyTo(_v_att_sp->q_d);
 
 	_mc_roll_weight = math::constrain(_mc_roll_weight, 0.0f, 1.0f);
+	_mc_pitch_weight = math::constrain(_mc_pitch_weight, 0.0f, 1.0f);
 	_mc_yaw_weight = math::constrain(_mc_yaw_weight, 0.0f, 1.0f);
 	_mc_throttle_weight = math::constrain(_mc_throttle_weight, 0.0f, 1.0f);
 }
@@ -435,15 +478,50 @@ void Tiltrotor::fill_actuator_outputs()
 	mc_out[actuator_controls_s::INDEX_YAW]   = mc_in[actuator_controls_s::INDEX_YAW]   * _mc_yaw_weight;
 
 	if (_vtol_schedule.flight_mode == vtol_mode::FW_MODE) {
-		mc_out[actuator_controls_s::INDEX_THROTTLE] = fw_in[actuator_controls_s::INDEX_THROTTLE];
+		float fw_throttle_output =
+			fw_in[actuator_controls_s::INDEX_THROTTLE];
+
+		if (_fw_throttle_handover_active) {
+			constexpr float fw_throttle_handover_duration_s = 0.4f;
+
+			const float elapsed_s =
+				static_cast<float>(hrt_absolute_time() -
+						   _fw_throttle_handover_start_time) * 1e-6f;
+
+			const float blend =
+				math::constrain(elapsed_s / fw_throttle_handover_duration_s,
+						0.0f, 1.0f);
+
+			fw_throttle_output =
+				(1.0f - blend) * _fw_throttle_handover_start_output
+				+ blend * fw_throttle_output;
+
+			if (blend >= 1.0f) {
+				_fw_throttle_handover_active = false;
+			}
+		}
+
+		mc_out[actuator_controls_s::INDEX_THROTTLE] =
+			math::constrain(fw_throttle_output, 0.0f, 1.0f);
 
 		/* allow differential thrust if enabled */
 		if (_params->diff_thrust == 1) {
 			mc_out[actuator_controls_s::INDEX_ROLL] = fw_in[actuator_controls_s::INDEX_YAW] * _params->diff_thrust_scale;
 		}
 
+//	} else {
+//		mc_out[actuator_controls_s::INDEX_THROTTLE] = mc_in[actuator_controls_s::INDEX_THROTTLE] * _mc_throttle_weight;
+//	}
+
 	} else {
-		mc_out[actuator_controls_s::INDEX_THROTTLE] = mc_in[actuator_controls_s::INDEX_THROTTLE] * _mc_throttle_weight;
+		_fw_throttle_handover_active = false;
+		const float mc_throttle = mc_in[actuator_controls_s::INDEX_THROTTLE] * _mc_throttle_weight;
+
+		if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_FRONT_P2) {mc_out[actuator_controls_s::INDEX_THROTTLE] = math::min(mc_throttle, _params->front_trans_throttle);
+
+		} else {
+			mc_out[actuator_controls_s::INDEX_THROTTLE] = mc_throttle;
+		}
 	}
 
 	// Fixed wing output
@@ -455,9 +533,44 @@ void Tiltrotor::fill_actuator_outputs()
 		fw_out[actuator_controls_s::INDEX_YAW]   = 0;
 
 	} else {
-		fw_out[actuator_controls_s::INDEX_ROLL]  = fw_in[actuator_controls_s::INDEX_ROLL];
-		fw_out[actuator_controls_s::INDEX_PITCH] = fw_in[actuator_controls_s::INDEX_PITCH];
-		fw_out[actuator_controls_s::INDEX_YAW]   = fw_in[actuator_controls_s::INDEX_YAW];
+		const bool front_transition =
+			_vtol_schedule.flight_mode == vtol_mode::TRANSITION_FRONT_P1 ||
+			_vtol_schedule.flight_mode == vtol_mode::TRANSITION_FRONT_P2;
+
+		const float fw_pitch_weight = front_transition
+					      ? math::constrain(1.0f - _mc_pitch_weight, 0.0f, 1.0f)
+					      : 1.0f;
+
+			fw_out[actuator_controls_s::INDEX_ROLL] = fw_in[actuator_controls_s::INDEX_ROLL];
+
+			float fw_pitch_output =
+			fw_in[actuator_controls_s::INDEX_PITCH] * fw_pitch_weight;
+
+			if (_fw_pitch_handover_active) {
+				if (_vtol_schedule.flight_mode == vtol_mode::FW_MODE) {
+					constexpr float fw_pitch_handover_duration = 0.4f;
+
+					const float elapsed =
+						static_cast<float>(hrt_absolute_time() - _fw_pitch_handover_start_time) * 1e-6f;
+
+					const float blend =
+						math::constrain(elapsed / fw_pitch_handover_duration, 0.0f, 1.0f);
+
+					fw_pitch_output =
+						(1.0f - blend) * _fw_pitch_handover_start_output
+						+ blend * fw_pitch_output;
+
+					if (blend >= 1.0f) {
+						_fw_pitch_handover_active = false;
+					}
+
+				} else {
+					_fw_pitch_handover_active = false;
+				}
+			}
+
+					      fw_out[actuator_controls_s::INDEX_PITCH] = fw_pitch_output;
+					      fw_out[actuator_controls_s::INDEX_YAW] = fw_in[actuator_controls_s::INDEX_YAW];
 	}
 
 	_actuators_out_0->timestamp_sample = _actuators_mc_in->timestamp_sample;

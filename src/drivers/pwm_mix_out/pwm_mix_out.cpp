@@ -671,13 +671,21 @@ void pwm_mix_out::mix_and_update_outputs()
         //    actuator_outputs_s actuator_outputs{};
 
         if( _armed_state == true ) {
+            /*float dt0 = math::constrain(_thr_fw + _thr_mc, 0.f, 1.f);
+            float dt1 = dt0 + _pitch_mc*_pitch_scale.get()- _roll_mc*_roll_scale.get()                           ;
+            float dt2 = dt0                               - _roll_mc*_roll_scale.get() ;
+            float dt3 = dt0 - _pitch_mc*_pitch_scale.get()- _roll_mc*_roll_scale.get()                             ;
+            float dt4 = dt0 - _pitch_mc*_pitch_scale.get()+ _roll_mc*_roll_scale.get()                            ;
+            float dt5 = dt0                               + _roll_mc*_roll_scale.get() ;
+            float dt6 = dt0 + _pitch_mc*_pitch_scale.get()+ _roll_mc*_roll_scale.get()                            ;
+            */
             float dt0 = math::constrain(_thr_fw + _thr_mc, 0.f, 1.f);
-            float dt1 = dt0 + _pitch_mc*_pitch_scale.get()                             + _yaw_mc*_yaw_scale.get();
-            float dt2 = dt0                               - _roll_mc*_roll_scale.get() - _yaw_mc*_yaw_scale.get();
-            float dt3 = dt0 - _pitch_mc*_pitch_scale.get()                             + _yaw_mc*_yaw_scale.get();
-            float dt4 = dt0 - _pitch_mc*_pitch_scale.get()                             - _yaw_mc*_yaw_scale.get();
-            float dt5 = dt0                               + _roll_mc*_roll_scale.get() + _yaw_mc*_yaw_scale.get();
-            float dt6 = dt0 + _pitch_mc*_pitch_scale.get()                             - _yaw_mc*_yaw_scale.get();
+            float dt1 = dt0 + _pitch_mc*_pitch_scale.get()- _roll_mc*_roll_scale.get() +_yaw_mc*_yaw_scale.get();
+            float dt2 = dt0                               - _roll_mc*_roll_scale.get()-_yaw_mc*_yaw_scale.get();
+            float dt3 = dt0 - _pitch_mc*_pitch_scale.get()- _roll_mc*_roll_scale.get() +_yaw_mc*_yaw_scale.get()                            ;
+            float dt4 = dt0 - _pitch_mc*_pitch_scale.get()+ _roll_mc*_roll_scale.get()  -_yaw_mc*_yaw_scale.get()                          ;
+            float dt5 = dt0                               + _roll_mc*_roll_scale.get() +_yaw_mc*_yaw_scale.get();
+            float dt6 = dt0 + _pitch_mc*_pitch_scale.get()+ _roll_mc*_roll_scale.get() -_yaw_mc*_yaw_scale.get()                           ;
 
             _actuator_outputs.output[0] = math::constrain(1000.f + dt1 *1000.f ,_pwm_main1_min.get(), _pwm_main1_max.get());
             _actuator_outputs.output[1] = math::constrain(1000.f + dt2 *1000.f, _pwm_main2_min.get(), _pwm_main2_max.get());
@@ -691,8 +699,12 @@ void pwm_mix_out::mix_and_update_outputs()
 
             _actuator_outputs.output[8] = math::gradual(_flap, _pwm_aux1_min_x.get(), _pwm_aux1_max_x.get(), _pwm_aux1_min.get(), _pwm_aux1_max.get());
             _actuator_outputs.output[9] = math::gradual(_flap, _pwm_aux2_min_x.get(), _pwm_aux2_max_x.get(), _pwm_aux2_min.get(), _pwm_aux2_max.get());
-            _actuator_outputs.output[10] = math::gradual(_flap, _pwm_aux3_min_x.get(), _pwm_aux3_max_x.get(), _pwm_aux3_min.get(), _pwm_aux3_max.get());
-            _actuator_outputs.output[11] = math::gradual(_flap, _pwm_aux4_min_x.get(), _pwm_aux4_max_x.get(), _pwm_aux4_min.get(), _pwm_aux4_max.get());
+           _actuator_outputs.output[10] = math::gradual(_flap, _pwm_aux3_min_x.get(), _pwm_aux3_max_x.get(), _pwm_aux3_min.get(), _pwm_aux3_max.get());
+           _actuator_outputs.output[11] = math::gradual(_flap, _pwm_aux4_min_x.get(), _pwm_aux4_max_x.get(), _pwm_aux4_min.get(), _pwm_aux4_max.get());
+           //float yaw_tilt = math::constrain(_yaw_mc * _yaw_tilt_scale.get(), -0.1111f, 0.1111f) * (1.0f - _flap);
+           //_actuator_outputs.output[10] = math::gradual(_flap - yaw_tilt, _pwm_aux3_min_x.get(),_pwm_aux3_max_x.get(), _pwm_aux3_min.get(), _pwm_aux3_max.get());
+           //_actuator_outputs.output[11] = math::gradual(_flap + yaw_tilt, _pwm_aux4_min_x.get(),_pwm_aux4_max_x.get(), _pwm_aux4_min.get(), _pwm_aux4_max.get());
+
 
             _actuator_outputs.output[12] = math::gradual3((_pitch_fw+_yaw_fw)*57.3f, _pwm_aux5_min_x.get(), 0.f, _pwm_aux5_max_x.get(), _pwm_aux5_min.get(), _pwm_aux5_trim.get(), _pwm_aux5_max.get());
             _actuator_outputs.output[13] = math::gradual3((_pitch_fw-_yaw_fw)*57.3f, _pwm_aux6_min_x.get(), 0.f, _pwm_aux6_max_x.get(), _pwm_aux6_min.get(), _pwm_aux6_trim.get(), _pwm_aux6_max.get());
